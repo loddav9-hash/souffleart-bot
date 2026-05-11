@@ -40,6 +40,64 @@ threading.Thread(target=run_fake_server, daemon=True).start()
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+# --- AI Модуль ---
+import openai
+import sys
+
+# Проверка наличия ключа API
+if "GROQ_API_KEY" not in os.environ:
+    logging.error("GROQ_API_KEY не найден в переменных окружения!")
+    sys.exit(1)
+
+client = openai.OpenAI(
+    base_url="https://api.groq.com/openai/v1",
+    api_key=os.environ["GROQ_API_KEY"]
+)
+
+async def get_ai_response(user_message: str, user_data: dict, history: list) -> str:
+    """Отправляет запрос в Groq и получает ответ."""
+    
+    # Собираем информацию о пользователе
+    user_info = f"Имя ученика: {user_data.get('name', 'неизвестно')}, Возраст: {user_data.get('age', 'неизвестно')}, Уровень: {user_data.get('skill', 'неизвестно')}, Цели: {user_data.get('goals', 'неизвестно')}."
+    
+    # Промпт для AI-администратора
+    system_prompt = (
+        "Ты — дружелюбный AI-ассистент студии рисования SouffleArt. Твоя задача — помогать ученикам. "
+        "Ты хорошо знаешь все курсы студии и цены. Твоя главная цель — привести клиента к записи на пробный урок.\n\n"
+        "Вот твои правила:\n"
+        "1. Если клиент хочет записаться, поздравь его и скажи: 'Отлично, давайте я помогу вам с записью!' "
+        "После этого попроси его нажать кнопку /enroll в меню.\n"
+        "2. Если клиент спрашивает о курсах, ценах или расписании, используй информацию из базы знаний.\n"
+        "3. Если клиент пишет что-то не по теме, вежливо переведи разговор на тему рисования и предложи свою помощь.\n"
+        "4. Будь вежливым, ободряющим и профессиональным. Используй эмодзи, чтобы сделать общение приятным.\n\n"
+        "База знаний:\n"
+        "- Курс 'Академический рисунок': изучение основ композиции, перспективы, работа с карандашом. Длительность 1.5 часа.\n"
+        "- Курс 'Скетчинг': быстрые зарисовки, развитие креативности. Подходит для любого уровня. Длительность 1 час.\n"
+        "- Курс 'Свободная тема': вы рисуете то, что хотите, с поддержкой преподавателя. Длительность 1.5 часа.\n"
+        "- Цены: пробное занятие — 15€, разовое занятие — 25€, абонемент на 4 занятия — 80€, на 8 занятий — 150€.\n"
+        "- Расписание: Пн-Пт с 10:00 до 20:00, Сб с 11:00 до 17:00."
+    )
+    
+    # Формируем историю диалога для AI
+    messages = [{"role": "system", "content": system_prompt}]
+    for msg in history[-4:]: # Отправляем последние 4 сообщения для контекста
+        messages.append(msg)
+    messages.append({"role": "user", "content": f"{user_info}\n\nСообщение от ученика: {user_message}"})
+    
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=500
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        logging.error(f"Ошибка Groq API: {e}")
+        return None
+
+# Словарь для хранения истории диалогов
+user_dialogs = {}
 
 def get_text(lang: str, key: str, **kwargs) -> str:
     try:
@@ -225,6 +283,51 @@ async def info_pages(callback: types.CallbackQuery):
     }
     await callback.message.edit_text(texts[callback.data], reply_markup=get_main_menu_keyboard())
     await callback.answer()
+# --- AI-Обработчик ---
+@dp.message(Command("ai_chat"))
+async def start_ai_chat(message: types.Message):
+    """Команда для начала диалога с AI."""
+    user_id = message.from_user.id
+    user_data = await get_user(user_id)
+    if not user_data:
+        await message.answer("Чтобы пообщаться с AI-администратором, сначала пройдите анкету: нажмите /start")
+        return
+    await message.answer("Привет! Я AI-помощник студии SouffleArt. Задавайте мне любые вопросы о курсах, ценах или просто попросите совета! 😊")
+
+@dp.message()
+async def ai_chat_handler(message: types.Message, state: FSMContext = None):
+    """
+    Главный обработчик свободных сообщений.
+    Если сообщение не попало ни под одну команду или FSM-состояние, оно идет сюда.
+    """
+    user_id = message.from_user.id
+    user_data = await get_user(user_id)
+    
+    # Игнорируем сообщения, которые являются командами
+    if message.text and message.text.startswith('/'):
+        return
+    
+    # Если пользователь не заполнил анкету, не даем общаться с AI
+    if not user_data:
+        await message.answer("Чтобы я мог вам помочь, сначала расскажите о себе. Нажмите /start")
+        return
+    
+    # Показываем статус "печатает"
+    await bot.send_chat_action(user_id, action="typing")
+    
+    # Получаем историю диалога
+    if user_id not in user_dialogs:
+        user_dialogs[user_id] = []
+    
+    user_dialogs[user_id].append({"role": "user", "content": message.text})
+    
+    ai_response = await get_ai_response(message.text, user_data, user_dialogs[user_id])
+    
+    if ai_response:
+        user_dialogs[user_id].append({"role": "assistant", "content": ai_response})
+        await message.answer(ai_response)
+    else:
+        await message.answer("Извините, у меня небольшие технические трудности. Попробуйте позже.")
 
 async def main():
     await init_db()
