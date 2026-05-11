@@ -295,16 +295,6 @@ async def info_pages(callback: types.CallbackQuery):
     }
     await callback.message.edit_text(texts[callback.data], reply_markup=get_main_menu_keyboard())
     await callback.answer()
-# --- AI-Обработчик ---
-@dp.message(Command("ai_chat"))
-async def start_ai_chat(message: types.Message):
-    """Команда для начала диалога с AI."""
-    user_id = message.from_user.id
-    user_data = await get_user(user_id)
-    if not user_data:
-        await message.answer("Чтобы пообщаться с AI-администратором, сначала пройдите анкету: нажмите /start")
-        return
-    await message.answer("Привет! Я AI-помощник студии SouffleArt. Задавайте мне любые вопросы о курсах, ценах или просто попросите совета! 😊")
 
 @dp.message()
 async def ai_chat_handler(message: types.Message, state: FSMContext = None):
