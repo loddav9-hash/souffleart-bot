@@ -106,7 +106,8 @@ async def get_ai_response(user_message: str, user_data: dict, history: list) -> 
         return None
 
 user_dialogs = {}
-welcomed_users = set()  # пользователи, которых уже поприветствовали
+welcomed_users = set()
+user_lang = {}  # пользователи, которых уже поприветствовали
 def detect_language(text: str) -> str:
     """Определяет язык по символам. Возвращает 'en', 'sr', 'ru'."""
     has_cyrillic = False
@@ -398,21 +399,16 @@ async def ai_chat_handler(message: types.Message, state: FSMContext = None):
         return
 
     await bot.send_chat_action(user_id, action="typing")
-
     if user_id not in user_dialogs:
         user_dialogs[user_id] = []
-
     user_dialogs[user_id].append({"role": "user", "content": message.text})
 
-    # Определяем язык сообщения и очищаем историю при смене
     current_lang = detect_language(message.text)
     if user_id not in user_lang:
         user_lang[user_id] = current_lang
     elif user_lang[user_id] != current_lang:
         user_lang[user_id] = current_lang
-        # Оставляем только текущее сообщение, чтобы AI переключился
         user_dialogs[user_id] = [{"role": "user", "content": message.text}]
-
     ai_response = await get_ai_response(message.text, user_data, user_dialogs[user_id])
     
     if ai_response:
