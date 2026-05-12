@@ -54,31 +54,36 @@ async def get_ai_response(user_message: str, user_data: dict, history: list) -> 
     user_info = f"Имя ученика: {user_data.get('name', 'неизвестно')}, Возраст: {user_data.get('age', 'неизвестно')}, Уровень: {user_data.get('skill', 'неизвестно')}, Цели: {user_data.get('goals', 'неизвестно')}."
 
     system_prompt = (
-        "Ты — дружелюбный AI-ассистент студии рисования SouffleArt. Твоя задача — помогать ученикам выбрать курс, "
-        "рассказывать о студии и записывать их на пробное занятие.\n\n"
-        "Твои правила:\n"
-        "1. Отвечай приветливо, но коротко. Не используй больше 2-3 предложений за раз, если клиент явно не просит подробностей.\n"
-        "2. Если клиент хочет записаться, поздравь его и предложи конкретный день: "
-        "'Отлично! У нас есть места завтра в 15:00 и в четверг в 11:00. Какой вам удобнее?'. "
-        "После выбора дня попроси нажать кнопку '📝 Записаться' в меню.\n"
-        "3. Если клиент спрашивает о курсах, ценах или расписании, используй информацию из базы знаний.\n"
-        "4. Если клиент пишет что-то не по теме, вежливо переведи разговор на тему рисования и предложи свою помощь.\n\n"
+        "Ты — интеллектуальный ассистент Софии, основательницы студии рисования SouffleArt. "
+        "Твоя задача — приветствовать, рассказывать о курсах, помогать с записью на пробный урок.\n\n"
+        "Правила общения:\n"
+        "1. При первом сообщении представься: «Добрый день! Я — интеллектуальный ассистент Софии...» (текст из приветствия).\n"
+        "2. Отвечай приветливо, кратко (2-3 предложения).\n"
+        "3. Если клиент хочет записаться, предложи пробный урок (он бесплатный, 20-30 мин). Спроси удобный день.\n"
+        "4. Если клиент спрашивает о направлениях, расскажи о трёх: Академический рисунок, Скетчинг, Свободная тема.\n"
+        "5. Учитывай возраст: детям до 14 лет вежливо откажи (только индивидуальный мастер-класс по договорённости).\n"
+        "6. Не давай медицинских советов.\n"
+        "7. Оплата: только карты или перевод. Наличных нет.\n\n"
         "База знаний:\n"
-        "- Курс 'Академический рисунок': изучение основ композиции, перспективы, работа с карандашом. Длительность 1.5 часа.\n"
-        "- Курс 'Скетчинг': быстрые зарисовки, развитие креативности. Подходит для любого уровня. Длительность 1 час.\n"
-        "- Курс 'Свободная тема': вы рисуете то, что хотите, с поддержкой преподавателя. Длительность 1.5 часа.\n"
-        "- Цены: пробное занятие — 15€, разовое занятие — 25€, абонемент на 4 занятия — 80€, на 8 занятий — 150€.\n"
-        "- Расписание: Пн-Пт с 10:00 до 20:00, Сб с 11:00 до 17:00. Воскресенье — выходной.\n"
-        "- Преподаватели: София (основатель, ведёт Скетчинг и Свободную тему), Марко (академический рисунок), Ивана (детские группы).\n"
-        "- Правила студии: при отмене записи менее чем за 2 часа пробное занятие сгорает. Материалы включены в стоимость.\n"
-        "- Контакты: адрес ул. Милоша Поцерца 12, телефон +381 64 1234567, Instagram @SouffleArt.\n\n"
-        "Примеры хороших ответов:\n"
-        "Клиент: 'Я никогда не рисовал, с чего начать?'\n"
-        "Ты: 'Рекомендую Скетчинг! Это весело и подходит для новичков. Пробное занятие всего 15€, записать вас?'\n"
-        "Клиент: 'Я хочу научиться рисовать маслом'\n"
-        "Ты: 'Масло мы пока не преподаём, но на Академическом рисунке вы получите отличную базу! Рассказать подробнее?'\n"
-        "Клиент: 'Спасибо, до свидания'\n"
-        "Ты: 'Рада была помочь! Если появятся вопросы — пишите. Хорошего дня! 😊'"
+        "- Направления:\n"
+        "  • Академический рисунок: композиция, перспектива, светотень, конструктивное построение.\n"
+        "  • Скетчинг: быстрые зарисовки, развитие креативности, подходит для любого уровня.\n"
+        "  • Свободная тема: рисуете что хотите, я помогаю.\n"
+        "- Цены:\n"
+        "  • Пробный урок: бесплатно, 20-30 мин.\n"
+        "  • Разовое занятие: 10€, 50 мин.\n"
+        "  • Абонемент на 4 занятия: 36€ (9€/урок).\n"
+        "  • Абонемент на 8 занятий: 64€ (8€/урок).\n"
+        "  • Абонемент на 12 занятий: 90€ (7.5€/урок).\n"
+        "- Расписание: Пн, Ср, Пт, Сб с 17:00 до 21:00 (по часам).\n"
+        "- Формат: онлайн через Zoom/Skype/Telegram. Материалы для скетчинга/свободной темы — бумага и карандаш, для академического — дополнительные, объясню на пробном.\n"
+        "- Контакты: Instagram https://www.instagram.com/sofia_lodygina , Telegram канал https://t.me/Souffle_LSD .\n"
+        "- Правила: за день напоминание, после урока — отзыв.\n\n"
+        "Примеры:\n"
+        "Клиент: «Я новичок, что посоветуете?»\n"
+        "Ты: «Рекомендую Скетчинг. Пробный урок бесплатный, хотели бы попробовать в среду в 17:00?»\n"
+        "Клиент: «Сколько стоит?»\n"
+        "Ты: «Пробный — бесплатно. Разовое занятие — 10€, абонементы выгоднее. Рассказать подробнее?»"
     )
 
     messages = [{"role": "system", "content": system_prompt}]
@@ -114,6 +119,7 @@ class EnrollState(StatesGroup):
 class BookingState(StatesGroup):
     waiting_for_course = State()
     waiting_for_lesson_type = State()
+    waiting_for_subscription_qty = State()
     waiting_for_date = State()
     waiting_for_time = State()
     waiting_for_payment = State()
@@ -128,11 +134,11 @@ def get_text(lang: str, key: str, **kwargs) -> str:
 
 def get_main_menu_keyboard(lang: str = "ru"):
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text=get_text(lang, "course_btn"), callback_data="courses"))
-    builder.row(InlineKeyboardButton(text=get_text(lang, "enroll_btn"), callback_data="enroll"))
-    builder.row(InlineKeyboardButton(text=get_text(lang, "portfolio_btn"), callback_data="portfolio"))
-    builder.row(InlineKeyboardButton(text=get_text(lang, "about_btn"), callback_data="about"))
-    builder.row(InlineKeyboardButton(text=get_text(lang, "prices_btn"), callback_data="prices"))
+    builder.row(InlineKeyboardButton(text="📚 Курсы", callback_data="courses"))
+    builder.row(InlineKeyboardButton(text="📝 Записаться", callback_data="enroll"))
+    builder.row(InlineKeyboardButton(text="🖼 Портфолио", callback_data="portfolio"))
+    builder.row(InlineKeyboardButton(text="👩‍🎨 О студии", callback_data="about"))
+    builder.row(InlineKeyboardButton(text="💰 Прайс-лист", callback_data="prices"))
     return builder.as_markup()
 
 # --- Обработчики ---
@@ -145,7 +151,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
         await state.set_state(EnrollState.waiting_for_name)
     else:
         await message.answer(
-            get_text("ru", "start", name=user_data["name"]),
+            f"Добрый день. Я — интеллектуальный ассистент Софии, художницы и основательницы студии SouffleArt.\nОна учит рисовать без страха и скуки, а я здесь, чтобы ответить на ваши вопросы, рассказать о курсах и помочь с записью на пробное занятие.\nЧем я могу быть вам полезен?",
             reply_markup=get_main_menu_keyboard()
         )
 
@@ -193,19 +199,32 @@ async def process_goals(message: types.Message, state: FSMContext):
 @dp.callback_query(lambda c: c.data == "courses")
 async def show_courses(callback: types.CallbackQuery):
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text=get_text("ru", "academic_drawing"), callback_data="course_academic"))
-    builder.row(InlineKeyboardButton(text=get_text("ru", "sketching"), callback_data="course_sketching"))
-    builder.row(InlineKeyboardButton(text=get_text("ru", "free_theme"), callback_data="course_free"))
-    builder.row(InlineKeyboardButton(text=get_text("ru", "back_btn"), callback_data="back_to_main"))
-    await callback.message.edit_text("📚 Наши курсы:", reply_markup=builder.as_markup())
+    builder.row(InlineKeyboardButton(text="🔹 Академический рисунок", callback_data="course_academic"))
+    builder.row(InlineKeyboardButton(text="🔹 Скетчинг", callback_data="course_sketching"))
+    builder.row(InlineKeyboardButton(text="🔹 Свободная тема", callback_data="course_free"))
+    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main"))
+    await callback.message.edit_text(
+        "Я предлагаю три основных направления. Выберите то, что вам ближе:\n\n"
+        "🔹 Академический рисунок\nДля тех, кто хочет получить серьёзную базу. Изучим композицию, перспективу, светотень и конструктивное построение.\n\n"
+        "🔹 Скетчинг\nДля лёгкости и смелости. Быстрые, живые зарисовки. Научимся не бояться ошибок и находить свой стиль.\n\n"
+        "🔹 Свободная тема\nРисуем то, что интересно именно Вам. Я буду вашим наставником и помогу прийти к результату.",
+        reply_markup=builder.as_markup()
+    )
     await callback.answer()
 
 @dp.callback_query(lambda c: c.data.startswith("course_"))
 async def course_info(callback: types.CallbackQuery):
     course = callback.data.split("_")[1]
-    await callback.answer(f"Информация о курсе {course} появится позже.")
-    await callback.message.edit_text(f"Вы выбрали курс: {course}. Запись на него пока в разработке.",
-                                     reply_markup=get_main_menu_keyboard())
+    info = {
+        "academic": "📐 Академический рисунок — база для серьёзного роста. Композиция, перспектива, светотень.",
+        "sketching": "✏️ Скетчинг — лёгкость и смелость. Быстрые наброски, развитие стиля.",
+        "free": "🎨 Свободная тема — рисуйте что хотите, я помогу."
+    }
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="📝 Записаться", callback_data="enroll"))
+    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main"))
+    await callback.message.edit_text(info.get(course, "Описание скоро появится."), reply_markup=builder.as_markup())
+    await callback.answer()
 
 @dp.callback_query(lambda c: c.data == "back_to_main")
 async def back_to_main(callback: types.CallbackQuery):
@@ -215,9 +234,29 @@ async def back_to_main(callback: types.CallbackQuery):
 @dp.callback_query(lambda c: c.data in ["portfolio", "about", "prices"])
 async def info_pages(callback: types.CallbackQuery):
     texts = {
-        "portfolio": "🖼 Здесь будут наши работы.",
-        "about": "👩‍🎨 О студии SouffleArt...",
-        "prices": "💰 Прайс-лист появится скоро."
+        "portfolio": (
+    "🖼 Мои работы можно посмотреть здесь:\n\n"
+    "📸 Instagram: https://www.instagram.com/sofia_lodygina\n"
+    "✏️ Telegram-канал: https://t.me/Souffle_LSD\n"
+    "📂 Портфолио по направлениям в одном файле (скоро здесь)."
+        ),
+        "about": (
+            "👩‍🎨 Меня зовут София. Souffle — мой творческий псевдоним.\n\n"
+            "Я художница и преподаватель. Училась в художественной школе, участвовала в выставках и конкурсах. "
+            "Вела мастер-классы для детей, сейчас работаю над анимационным проектом.\n\n"
+            "Мой стиль: смешанная техника, контраст жёсткой линии и мягкой тени. "
+            "Люблю скетчи, учу лёгкости и смелости.\n\n"
+            "Верю, что рисовать может каждый. И я здесь, чтобы помочь вам сделать первый шаг."
+        ),
+        "prices": (
+            "💰 Прайс-лист:\n\n"
+            "🎁 Пробный урок — бесплатно (20-30 мин).\n"
+            "⚡ Разовое занятие — 10€ (50 мин).\n"
+            "📦 Абонемент на 4 занятия — 36€ (9€/урок).\n"
+            "📦 Абонемент на 8 занятий — 64€ (8€/урок).\n"
+            "📦 Абонемент на 12 занятий — 90€ (7.5€/урок).\n\n"
+            "Материалы включены в стоимость."
+        )
     }
     await callback.message.edit_text(texts[callback.data], reply_markup=get_main_menu_keyboard())
     await callback.answer()
@@ -230,52 +269,80 @@ async def start_enroll(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("Сначала пройдите анкету! (нажмите /start)")
         return
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="Академический рисунок", callback_data="enroll_course_academic"))
-    builder.row(InlineKeyboardButton(text="Скетчинг", callback_data="enroll_course_sketching"))
-    builder.row(InlineKeyboardButton(text="Свободная тема", callback_data="enroll_course_free"))
-    builder.row(InlineKeyboardButton(text=get_text("ru", "back_btn"), callback_data="back_to_main"))
-    await state.set_state(BookingState.waiting_for_course)
-    await callback.message.edit_text("Выберите курс:", reply_markup=builder.as_markup())
+    builder.row(InlineKeyboardButton(text="🎁 Пробный урок (бесплатно)", callback_data="enroll_course_trial"))
+    builder.row(InlineKeyboardButton(text="⚡ Разовое занятие", callback_data="enroll_course_single"))
+    builder.row(InlineKeyboardButton(text="📦 Абонемент на курс", callback_data="enroll_course_subscription"))
+    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main"))
+    await state.set_state(BookingState.waiting_for_lesson_type)
+    await callback.message.edit_text(
+        "Выберите удобный формат:\nЯ помогу подобрать подходящий вариант, и мы обо всём договоримся.",
+        reply_markup=builder.as_markup()
+    )
     await callback.answer()
 
 @dp.callback_query(lambda c: c.data.startswith("enroll_course_"))
-async def enroll_course_chosen(callback: types.CallbackQuery, state: FSMContext):
-    course = callback.data.split("_")[2]
-    await state.update_data(course=course)
-    builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="Пробное занятие", callback_data="lesson_trial"))
-    builder.row(InlineKeyboardButton(text="Разовое занятие", callback_data="lesson_single"))
-    builder.row(InlineKeyboardButton(text="Абонемент на 4 занятия", callback_data="lesson_4"))
-    builder.row(InlineKeyboardButton(text="Абонемент на 8 занятий", callback_data="lesson_8"))
-    builder.row(InlineKeyboardButton(text="Абонемент на 12 занятий", callback_data="lesson_12"))
-    builder.row(InlineKeyboardButton(text=get_text("ru", "back_btn"), callback_data="back_to_main"))
-    await state.set_state(BookingState.waiting_for_lesson_type)
-    await callback.message.edit_text("Выберите тип занятия:", reply_markup=builder.as_markup())
+async def enroll_format_chosen(callback: types.CallbackQuery, state: FSMContext):
+    format_type = callback.data.split("_")[2]  # trial, single, subscription
+    await state.update_data(format_type=format_type)
+    if format_type == "subscription":
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="4 занятия (36€)", callback_data="sub_qty_4"))
+        builder.row(InlineKeyboardButton(text="8 занятий (64€)", callback_data="sub_qty_8"))
+        builder.row(InlineKeyboardButton(text="12 занятий (90€)", callback_data="sub_qty_12"))
+        builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main"))
+        await state.set_state(BookingState.waiting_for_subscription_qty)
+        await callback.message.edit_text("Выберите количество занятий:", reply_markup=builder.as_markup())
+    else:
+        # Для пробного или разового — сразу к выбору даты
+        await state.update_data(course="Скетчинг")  # Можно позже дать выбор курса, пока упростим
+        await show_date_selection(callback, state)
     await callback.answer()
 
-@dp.callback_query(lambda c: c.data.startswith("lesson_"))
-async def lesson_type_chosen(callback: types.CallbackQuery, state: FSMContext):
-    lesson_type = callback.data.split("_")[1]
-    await state.update_data(lesson_type=lesson_type)
+async def show_date_selection(callback, state):
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="Понедельник 15:00", callback_data="date_monday_15"))
-    builder.row(InlineKeyboardButton(text="Понедельник 17:00", callback_data="date_monday_17"))
-    builder.row(InlineKeyboardButton(text="Среда 15:00", callback_data="date_wednesday_15"))
-    builder.row(InlineKeyboardButton(text="Среда 17:00", callback_data="date_wednesday_17"))
-    builder.row(InlineKeyboardButton(text=get_text("ru", "back_btn"), callback_data="back_to_main"))
+    days = ["Понедельник", "Среда", "Пятница", "Суббота"]
+    times = ["17:00", "18:00", "19:00", "20:00", "21:00"]
+    for day in days:
+        for t in times:
+            builder.row(InlineKeyboardButton(text=f"{day} {t}", callback_data=f"date_{day}_{t}"))
+    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main"))
     await state.set_state(BookingState.waiting_for_date)
-    await callback.message.edit_text("Выберите дату и время:", reply_markup=builder.as_markup())
+    await callback.message.edit_text("Выберите удобные день и время:", reply_markup=builder.as_markup())
+
+@dp.callback_query(lambda c: c.data.startswith("sub_qty_"))
+async def subscription_qty_chosen(callback: types.CallbackQuery, state: FSMContext):
+    qty = int(callback.data.split("_")[2])
+    prices = {4: 36, 8: 64, 12: 90}
+    total = prices.get(qty, 0)
+    await state.update_data(subscription_qty=qty, total_price=total, course="Абонемент")
+    await show_date_selection(callback, state)
     await callback.answer()
 
 @dp.callback_query(lambda c: c.data.startswith("date_"))
 async def date_chosen(callback: types.CallbackQuery, state: FSMContext):
-    date_info = callback.data.split("_")[1] + " " + callback.data.split("_")[2]
+    parts = callback.data.split("_")
+    day = parts[1]
+    time = parts[2] if len(parts) > 2 else ""
+    date_info = f"{day} {time}"
     await state.update_data(date=date_info)
     data = await state.get_data()
-    text = f"Подтвердите запись:\nКурс: {data['course']}\nТип: {data['lesson_type']}\nДата: {date_info}"
+    format_type = data.get("format_type", "trial")
+    if format_type == "trial":
+        price_text = "бесплатно"
+        total = 0
+    elif format_type == "single":
+        price_text = "10€"
+        total = 10
+    else:
+        qty = data.get("subscription_qty", 4)
+        prices = {4: 36, 8: 64, 12: 90}
+        total = prices.get(qty, 0)
+        price_text = f"{total}€"
+    await state.update_data(total_price=total)
+    text = f"Подтвердите запись:\nФормат: {format_type}\nДата: {date_info}\nСтоимость: {price_text}"
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="Оплатить", callback_data="confirm_pay"))
-    builder.row(InlineKeyboardButton(text=get_text("ru", "back_btn"), callback_data="back_to_main"))
+    builder.row(InlineKeyboardButton(text="✅ Подтвердить", callback_data="confirm_pay"))
+    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main"))
     await state.set_state(BookingState.waiting_for_payment)
     await callback.message.edit_text(text, reply_markup=builder.as_markup())
     await callback.answer()
@@ -284,49 +351,39 @@ async def date_chosen(callback: types.CallbackQuery, state: FSMContext):
 async def confirm_payment(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     user_id = callback.from_user.id
-    await save_booking(user_id, data['course'], data['lesson_type'], data['date'], "time_placeholder")
+    await save_booking(user_id, data.get("course", "Скетчинг"), data.get("format_type", "trial"), data["date"], "confirmed")
     await state.clear()
-    await callback.message.edit_text("✅ Запись подтверждена! (Оплата получена условно)")
-    admin_text = f"Новая запись!\nУченик: {user_id}\nКурс: {data['course']}\nТип: {data['lesson_type']}\nДата: {data['date']}"
+    await callback.message.edit_text("✅ Запись подтверждена! Ждите напоминания за день до занятия.")
+    admin_text = (
+        f"📝 Новая запись!\n"
+        f"Ученик: {user_id}\n"
+        f"Формат: {data.get('format_type', 'trial')}\n"
+        f"Курс: {data.get('course', 'не указан')}\n"
+        f"Дата: {data['date']}\n"
+        f"Стоимость: {data.get('total_price', 0)}€"
+    )
     await bot.send_message(ADMIN_ID, admin_text)
     await callback.answer()
 
 # --- AI-Обработчик ---
 @dp.message()
 async def ai_chat_handler(message: types.Message, state: FSMContext = None):
-    """
-    Главный обработчик свободных сообщений.
-    Если сообщение не попало ни под одну команду или FSM-состояние, оно идет сюда.
-    """
     user_id = message.from_user.id
     user_data = await get_user(user_id)
-
-    # Игнорируем сообщения, которые являются командами
     if message.text and message.text.startswith('/'):
         return
-
-    # Если пользователь не заполнил анкету, не даем общаться с AI
     if not user_data:
         await message.answer("Чтобы я мог вам помочь, сначала расскажите о себе. Нажмите /start")
         return
-
-    # Показываем статус "печатает"
     await bot.send_chat_action(user_id, action="typing")
-
-    # Получаем историю диалога
     if user_id not in user_dialogs:
         user_dialogs[user_id] = []
     user_dialogs[user_id].append({"role": "user", "content": message.text})
-
     ai_response = await get_ai_response(message.text, user_data, user_dialogs[user_id])
-
     if ai_response:
         user_dialogs[user_id].append({"role": "assistant", "content": ai_response})
-
-        # Добавляем кнопку "Меню" под каждым ответом
         builder = InlineKeyboardBuilder()
         builder.row(InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main"))
-
         await message.answer(ai_response, reply_markup=builder.as_markup())
     else:
         await message.answer("Извините, у меня небольшие технические трудности. Попробуйте позже.")
