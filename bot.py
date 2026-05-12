@@ -379,6 +379,8 @@ async def ai_chat_handler(message: types.Message, state: FSMContext = None):
         return
 
     await bot.send_chat_action(user_id, action="typing")
+# Временно сбрасываем историю, чтобы язык мог переключиться (для теста)
+# user_dialogs.pop(user_id, None)
     if user_id not in user_dialogs:
         user_dialogs[user_id] = []
     user_dialogs[user_id].append({"role": "user", "content": message.text})
