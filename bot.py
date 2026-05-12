@@ -57,7 +57,7 @@ async def get_ai_response(user_message: str, user_data: dict, history: list) -> 
         "Ты — интеллектуальный ассистент Софии, основательницы студии рисования SouffleArt. "
         "Твоя задача — приветствовать, рассказывать о курсах, помогать с записью на пробный урок.\n\n"
         "Правила общения:\n"
-        "1. При первом сообщении представься: «Добрый день! Я — интеллектуальный ассистент Софии...» (текст из приветствия).\n"
+        "1. Если тебя настоятельно не просят представиться ещё раз, делай это ТОЛЬКО в первом ответе пользователю. В последующих диалогах сразу переходи к делу.\n"
         "2. Отвечай приветливо, кратко (2-3 предложения).\n"
         "3. Если клиент хочет записаться, предложи пробный урок (он бесплатный, 20-30 мин). Спроси удобный день.\n"
         "4. Если клиент спрашивает о направлениях, расскажи о трёх: Академический рисунок, Скетчинг, Свободная тема.\n"
@@ -104,6 +104,7 @@ async def get_ai_response(user_message: str, user_data: dict, history: list) -> 
         return None
 
 user_dialogs = {}
+welcomed_users = set()  # пользователи, которых уже поприветствовали
 
 # --- FSM ---
 class EnrollState(StatesGroup):
@@ -168,11 +169,10 @@ async def process_age(message: types.Message, state: FSMContext):
         return
     await state.update_data(age=int(message.text))
     builder = InlineKeyboardBuilder()
-    builder.row(
-        InlineKeyboardButton(text="Новичок", callback_data="skill_beginner"),
-        InlineKeyboardButton(text="Небольшой опыт", callback_data="skill_intermediate"),
-        InlineKeyboardButton(text="Рисую уверенно", callback_data="skill_advanced")
-    )
+    builder.row(InlineKeyboardButton(text="Новичок", callback_data="skill_beginner"))
+    builder.row(InlineKeyboardButton(text="Небольшой опыт", callback_data="skill_intermediate"))
+    builder.row(InlineKeyboardButton(text="Рисую уверенно", callback_data="skill_advanced"))
+
     await message.answer("Какой у тебя уровень рисования?", reply_markup=builder.as_markup())
     await state.set_state(EnrollState.waiting_for_skill)
 
@@ -375,19 +375,26 @@ async def ai_chat_handler(message: types.Message, state: FSMContext = None):
     if not user_data:
         await message.answer("Чтобы я мог вам помочь, сначала расскажите о себе. Нажмите /start")
         return
+
     await bot.send_chat_action(user_id, action="typing")
     if user_id not in user_dialogs:
         user_dialogs[user_id] = []
     user_dialogs[user_id].append({"role": "user", "content": message.text})
+
     ai_response = await get_ai_response(message.text, user_data, user_dialogs[user_id])
+
     if ai_response:
+        # Если пользователь ещё не поприветствован — добавляем приглашение к диалогу
+        if user_id not in welcomed_users:
+            ai_response += "\n\n💬 Вы можете задать мне любой вопрос или просто описать, что вам интересно — я слушаю."
+            welcomed_users.add(user_id)
+
         user_dialogs[user_id].append({"role": "assistant", "content": ai_response})
         builder = InlineKeyboardBuilder()
         builder.row(InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main"))
         await message.answer(ai_response, reply_markup=builder.as_markup())
     else:
         await message.answer("Извините, у меня небольшие технические трудности. Попробуйте позже.")
-
 async def main():
     await init_db()
     await dp.start_polling(bot)
